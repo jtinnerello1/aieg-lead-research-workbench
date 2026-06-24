@@ -37,6 +37,7 @@ button { cursor: pointer; }
 
 .layout-grid { display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: 14px; margin-bottom: 14px; }
 .detail-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr); gap: 14px; margin-bottom: 14px; }
+.audit-grid { display: grid; grid-template-columns: 1fr; gap: 14px; margin-bottom: 14px; }
 .panel { padding: 16px; }
 .panel-heading { margin-bottom: 12px; }
 .panel-heading h2 { margin: 0; font-size: 20px; letter-spacing: -0.02em; }
@@ -77,6 +78,10 @@ input::placeholder, textarea::placeholder { color: #8792a1; }
 .action-button { border: 0; border-radius: 999px; background: #1c6bba; color: #ffffff; font-weight: 850; padding: 10px 14px; white-space: nowrap; box-shadow: 0 10px 26px rgba(28, 107, 186, 0.22); }
 .action-button:hover { transform: translateY(-1px); }
 
+.brief-ready-banner { margin: -4px 0 12px; border: 1px solid #9ed6b8; border-radius: 14px; background: #e9f9f1; color: #135f3f; font-weight: 800; padding: 10px 12px; }
+.inline-brief-panel { scroll-margin-top: 18px; margin: 14px 0; border: 2px solid rgba(28, 107, 186, 0.28); border-radius: 18px; background: #ffffff; box-shadow: 0 16px 42px rgba(28, 107, 186, 0.11); padding: 16px; }
+.inline-brief-panel .panel-heading { border-bottom: 1px solid rgba(28, 107, 186, 0.12); padding-bottom: 10px; }
+
 .ai-summary { border-left: 4px solid #1c6bba; padding: 10px 12px; border-radius: 12px; background: #f2f7fc; }
 .three-column, .brief-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
 .brief-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -98,7 +103,7 @@ textarea { min-height: 90px; resize: vertical; }
 .risk-high { background: #ffe5e0; color: #9b3023; }
 
 .brief-preview { margin-bottom: 12px; }
-.brief-empty-state { background: #f8fafc; min-height: 170px; display: flex; flex-direction: column; justify-content: center; }
+.brief-empty-state { background: #f8fafc; min-height: 130px; display: flex; flex-direction: column; justify-content: center; }
 .footer-note { padding: 10px 0 0; color: #6d7888; text-align: center; font-size: 12px; }
 
 @media (max-width: 1100px) {
