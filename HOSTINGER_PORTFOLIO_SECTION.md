@@ -39,47 +39,16 @@ This demo does not scrape real prospects, contact real people, update a CRM, run
 
 ## Hostinger iframe embed code
 
-Use this in a Hostinger Website Builder custom code/embed section. This version lets the app send its real content height to the Hostinger page, so the page scrolls instead of the iframe.
+Use this in a Hostinger Website Builder custom code/embed section. This version is script-free and uses a very tall iframe so the Hostinger page scrolls instead of the iframe window.
 
 ```html
-<style>
-  .aieg-workbench-frame {
-    width: 100%;
-    min-height: 2400px;
-    border: 0;
-    border-radius: 16px;
-    overflow: hidden;
-    display: block;
-  }
-</style>
-
 <iframe
-  id="aieg-workbench-frame"
-  class="aieg-workbench-frame"
   src="https://jtinnerello1.github.io/aieg-lead-research-workbench/"
   title="AIEG Lead Research Workbench Demo"
+  style="width:100%; height:6200px; border:0; border-radius:16px; overflow:hidden; display:block;"
   loading="lazy"
   scrolling="no"
 ></iframe>
-
-<script>
-  window.addEventListener('message', function (event) {
-    if (event.origin !== 'https://jtinnerello1.github.io') {
-      return;
-    }
-
-    if (!event.data || event.data.type !== 'aieg-workbench-height') {
-      return;
-    }
-
-    var frame = document.getElementById('aieg-workbench-frame');
-    var height = Number(event.data.height);
-
-    if (frame && height > 0) {
-      frame.style.height = height + 40 + 'px';
-    }
-  });
-</script>
 
 <p style="font-size:14px; line-height:1.5; color:#5f6b7a; margin-top:12px;">
   Demo application. Synthetic data only. No real companies, contacts, CRM records, scraping, outreach, or CRM updates are used.
