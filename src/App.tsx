@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
 import { demoNotice, icpProfile, syntheticProspects } from './data';
 import type { ReviewStatus, ScoreBand, SyntheticProspect } from './types';
 
@@ -175,7 +175,7 @@ export default function App() {
               placeholder="Search by company, industry, region, or summary"
               type="search"
               value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
+              onChange={(event: ChangeEvent<HTMLInputElement>) => setSearchTerm(event.target.value)}
             />
 
             <label className="field-label" htmlFor="fit-filter">
@@ -184,7 +184,7 @@ export default function App() {
             <select
               id="fit-filter"
               value={scoreBandFilter}
-              onChange={(event) => setScoreBandFilter(event.target.value as 'All' | ScoreBand)}
+              onChange={(event: ChangeEvent<HTMLSelectElement>) => setScoreBandFilter(event.target.value as 'All' | ScoreBand)}
             >
               {scoreBandOptions.map((option) => (
                 <option key={option}>{option}</option>
@@ -197,7 +197,7 @@ export default function App() {
             <select
               id="status-filter"
               value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value as 'All' | ReviewStatus)}
+              onChange={(event: ChangeEvent<HTMLSelectElement>) => setStatusFilter(event.target.value as 'All' | ReviewStatus)}
             >
               {statusFilterOptions.map((option) => (
                 <option key={option}>{option}</option>
@@ -282,7 +282,7 @@ export default function App() {
           <select
             id="review-status"
             value={selectedStatus}
-            onChange={(event) =>
+            onChange={(event: ChangeEvent<HTMLSelectElement>) =>
               setStatusByProspect((current) => ({
                 ...current,
                 [selectedProspect.id]: event.target.value as ReviewStatus,
@@ -301,7 +301,7 @@ export default function App() {
             id="review-notes"
             placeholder="Add human review notes for this fictitious prospect."
             value={selectedNotes}
-            onChange={(event) =>
+            onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
               setNotesByProspect((current) => ({
                 ...current,
                 [selectedProspect.id]: event.target.value,
