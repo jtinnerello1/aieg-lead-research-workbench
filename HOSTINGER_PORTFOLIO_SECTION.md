@@ -39,13 +39,36 @@ This demo does not scrape real prospects, contact real people, update a CRM, run
 
 ## Hostinger iframe embed code
 
-Use this in a Hostinger Website Builder custom code/embed section.
+Use this in a Hostinger Website Builder custom code/embed section. This version uses a taller responsive iframe so the Hostinger page scrolls instead of the app window.
 
 ```html
+<style>
+  .aieg-workbench-frame {
+    width: 100%;
+    height: 2400px;
+    border: 0;
+    border-radius: 16px;
+    overflow: hidden;
+    display: block;
+  }
+
+  @media (max-width: 1100px) {
+    .aieg-workbench-frame {
+      height: 3300px;
+    }
+  }
+
+  @media (max-width: 700px) {
+    .aieg-workbench-frame {
+      height: 4600px;
+    }
+  }
+</style>
+
 <iframe
+  class="aieg-workbench-frame"
   src="https://jtinnerello1.github.io/aieg-lead-research-workbench/"
   title="AIEG Lead Research Workbench Demo"
-  style="width:100%; height:900px; border:0; border-radius:16px; overflow:hidden;"
   loading="lazy"
 ></iframe>
 
