@@ -45,7 +45,7 @@ Use this in a Hostinger Website Builder custom code/embed section. This version 
 <iframe
   src="https://jtinnerello1.github.io/aieg-lead-research-workbench/"
   title="AIEG Lead Research Workbench Demo"
-  style="width:100%; height:2850px; border:0; border-radius:16px; overflow:hidden; display:block;"
+  style="width:100%; height:1850px; border:0; border-radius:16px; overflow:hidden; display:block;"
   loading="lazy"
   scrolling="no"
 ></iframe>
