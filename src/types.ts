@@ -35,7 +35,17 @@ export type AuditTrailEntry = {
   output: string;
 };
 
-export type SyntheticLead = {
+export type ResearchBrief = {
+  companySnapshot: string;
+  businessModel: string;
+  likelyOperationalPain: string[];
+  aiOpportunity: string[];
+  suggestedDiscoveryQuestions: string[];
+  recommendedNextStep: string;
+  humanValidationNeeded: string[];
+};
+
+export type SyntheticProspect = {
   id: string;
   companyName: string;
   industry: string;
@@ -54,14 +64,6 @@ export type SyntheticLead = {
   reviewStatus: ReviewStatus;
   reviewerNotes: string;
   scoringBreakdown: ScoringBreakdown;
-researchBrief: {
-  companySnapshot: string;
-  businessModel: string;
-  likelyOperationalPain: string[];
-  aiOpportunity: string[];
-  suggestedDiscoveryQuestions: string[];
-  recommendedNextStep: string;
-  humanValidationNeeded: string[];
-};
+  researchBrief: ResearchBrief;
   auditTrail: AuditTrailEntry[];
 };

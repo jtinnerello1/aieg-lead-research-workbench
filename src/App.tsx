@@ -1,12 +1,21 @@
-import { useMemo, useState } from 'react';
-import { demoNotice, icpProfile, syntheticLeads } from './data';
-import type { ReviewStatus, SyntheticLead } from './types';
+import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
+import { demoNotice, icpProfile, syntheticProspects } from './data';
+import type { ReviewStatus, ScoreBand, SyntheticProspect } from './types';
 
 const statusOptions: ReviewStatus[] = ['Needs Review', 'Qualified', 'Hold', 'Disqualified'];
+const scoreBandOptions: Array<'All' | ScoreBand> = ['All', 'High Fit', 'Medium Fit', 'Low Fit', 'Disqualified'];
+const statusFilterOptions: Array<'All' | ReviewStatus> = ['All', ...statusOptions];
+const reviewStorageKey = 'aieg-prospect-research-workbench-review-state';
 
-function getRiskLevel(lead: SyntheticLead) {
-  if (lead.riskFlags.some((flag) => flag.severity === 'High')) return 'High';
-  if (lead.riskFlags.some((flag) => flag.severity === 'Medium')) return 'Medium';
+type StoredReviewState = {
+  statusByProspect?: Record<string, ReviewStatus>;
+  notesByProspect?: Record<string, string>;
+  generatedBriefsByProspect?: Record<string, boolean>;
+};
+
+function getRiskLevel(prospect: SyntheticProspect) {
+  if (prospect.riskFlags.some((flag) => flag.severity === 'High')) return 'High';
+  if (prospect.riskFlags.some((flag) => flag.severity === 'Medium')) return 'Medium';
   return 'Low';
 }
 
@@ -16,45 +25,112 @@ function scoreClass(score: number) {
   return 'score score-low';
 }
 
-export default function App() {
-  const [selectedLeadId, setSelectedLeadId] = useState(syntheticLeads[0].id);
-  const [statusByLead, setStatusByLead] = useState<Record<string, ReviewStatus>>(
-    Object.fromEntries(syntheticLeads.map((lead) => [lead.id, lead.reviewStatus])),
+function getDefaultStatuses(): Record<string, ReviewStatus> {
+  return Object.fromEntries(
+    syntheticProspects.map((prospect): [string, ReviewStatus] => [prospect.id, prospect.reviewStatus]),
   );
-  const [notesByLead, setNotesByLead] = useState<Record<string, string>>(
-    Object.fromEntries(syntheticLeads.map((lead) => [lead.id, lead.reviewerNotes])),
-  );
+}
 
-  const selectedLead = useMemo(
-    () => syntheticLeads.find((lead) => lead.id === selectedLeadId) ?? syntheticLeads[0],
-    [selectedLeadId],
+function getDefaultNotes(): Record<string, string> {
+  return Object.fromEntries(
+    syntheticProspects.map((prospect): [string, string] => [prospect.id, prospect.reviewerNotes]),
+  );
+}
+
+function getDefaultGeneratedBriefs(): Record<string, boolean> {
+  return Object.fromEntries(syntheticProspects.map((prospect): [string, boolean] => [prospect.id, false]));
+}
+
+function loadStoredReviewState(): StoredReviewState {
+  try {
+    const savedState = window.localStorage.getItem(reviewStorageKey);
+    return savedState ? (JSON.parse(savedState) as StoredReviewState) : {};
+  } catch {
+    return {};
+  }
+}
+
+export default function App() {
+  const storedReviewState = useMemo(loadStoredReviewState, []);
+  const [selectedProspectId, setSelectedProspectId] = useState(syntheticProspects[0].id);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [scoreBandFilter, setScoreBandFilter] = useState<'All' | ScoreBand>('All');
+  const [statusFilter, setStatusFilter] = useState<'All' | ReviewStatus>('All');
+  const [statusByProspect, setStatusByProspect] = useState<Record<string, ReviewStatus>>({
+    ...getDefaultStatuses(),
+    ...storedReviewState.statusByProspect,
+  });
+  const [notesByProspect, setNotesByProspect] = useState<Record<string, string>>({
+    ...getDefaultNotes(),
+    ...storedReviewState.notesByProspect,
+  });
+  const [generatedBriefsByProspect, setGeneratedBriefsByProspect] = useState<Record<string, boolean>>({
+    ...getDefaultGeneratedBriefs(),
+    ...storedReviewState.generatedBriefsByProspect,
+  });
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      reviewStorageKey,
+      JSON.stringify({ statusByProspect, notesByProspect, generatedBriefsByProspect }),
+    );
+  }, [statusByProspect, notesByProspect, generatedBriefsByProspect]);
+
+  const filteredProspects = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+
+    return syntheticProspects.filter((prospect) => {
+      const matchesSearch =
+        !normalizedSearch ||
+        [
+          prospect.companyName,
+          prospect.industry,
+          prospect.region,
+          prospect.summary,
+          prospect.aiResearchSummary,
+        ]
+          .join(' ')
+          .toLowerCase()
+          .includes(normalizedSearch);
+
+      const matchesScoreBand = scoreBandFilter === 'All' || prospect.scoreBand === scoreBandFilter;
+      const matchesStatus = statusFilter === 'All' || statusByProspect[prospect.id] === statusFilter;
+
+      return matchesSearch && matchesScoreBand && matchesStatus;
+    });
+  }, [searchTerm, scoreBandFilter, statusFilter, statusByProspect]);
+
+  const selectedProspect = useMemo(
+    () => syntheticProspects.find((prospect) => prospect.id === selectedProspectId) ?? syntheticProspects[0],
+    [selectedProspectId],
   );
 
   const summary = useMemo(() => {
-    const highFit = syntheticLeads.filter((lead) => lead.scoreBand === 'High Fit').length;
-    const needsReview = Object.values(statusByLead).filter((status) => status === 'Needs Review').length;
-    const exportReady = Object.values(statusByLead).filter((status) => status === 'Qualified').length;
+    const highFit = syntheticProspects.filter((prospect) => prospect.scoreBand === 'High Fit').length;
+    const needsReview = Object.values(statusByProspect).filter((status) => status === 'Needs Review').length;
+    const briefsGenerated = Object.values(generatedBriefsByProspect).filter(Boolean).length;
 
     return {
-      total: syntheticLeads.length,
+      total: syntheticProspects.length,
       highFit,
       needsReview,
-      exportReady,
+      briefsGenerated,
     };
-  }, [statusByLead]);
+  }, [generatedBriefsByProspect, statusByProspect]);
 
-  const selectedStatus = statusByLead[selectedLead.id];
-  const selectedNotes = notesByLead[selectedLead.id];
+  const selectedStatus = statusByProspect[selectedProspect.id] ?? selectedProspect.reviewStatus;
+  const selectedNotes = notesByProspect[selectedProspect.id] ?? '';
+  const selectedBriefGenerated = generatedBriefsByProspect[selectedProspect.id] ?? false;
 
   return (
     <main className="app-shell">
       <section className="hero">
         <div>
-          <p className="eyebrow">Hermes-assisted portfolio demo</p>
-          <h1>AIEG Lead Research Workbench</h1>
+          <p className="eyebrow">Hermes-assisted workflow demo</p>
+          <h1>AIEG Prospect Research Workbench</h1>
           <p className="hero-copy">
-            A synthetic, human-in-the-loop demo showing how AI can help research, qualify, score,
-            and prepare leads for human review before any CRM action or outreach.
+            A synthetic, human-in-the-loop demo showing how AI-assisted research can turn fictitious
+            prospect information into a clear research brief for human review.
           </p>
         </div>
         <div className="hero-card">
@@ -64,17 +140,17 @@ export default function App() {
       </section>
 
       <section className="notice-panel">
-        <strong>About this demo:</strong> Hermes was used during the design and build process to help
-        structure the workflow, define synthetic scenarios, shape the scoring logic, and validate the
-        human-in-the-loop operating model. This app does not scrape real prospects, contact real
-        people, update a CRM, run scheduled jobs, or perform automated outreach.
+        <strong>About this demo:</strong> This is a simulated Hermes-assisted research experience.
+        Hermes helped shape the workflow and synthetic scenarios during design, but Hermes is not
+        running live inside this public app. The app does not scrape real prospects, contact real
+        people, run scheduled jobs, or perform automated outreach.
       </section>
 
       <section className="metrics-grid" aria-label="Workbench metrics">
-        <Metric label="Synthetic leads" value={summary.total.toString()} />
+        <Metric label="Fictitious prospects" value={summary.total.toString()} />
         <Metric label="High fit" value={summary.highFit.toString()} />
         <Metric label="Need review" value={summary.needsReview.toString()} />
-        <Metric label="Export ready" value={summary.exportReady.toString()} />
+        <Metric label="Briefs generated" value={summary.briefsGenerated.toString()} />
       </section>
 
       <section className="layout-grid">
@@ -87,48 +163,114 @@ export default function App() {
           <TagGroup label="Disqualifiers" values={icpProfile.disqualifiers} tone="warning" />
         </aside>
 
-        <section className="panel lead-list-panel">
-          <PanelHeading eyebrow="Synthetic lead list" title="Human review queue" />
-          <div className="lead-list">
-            {syntheticLeads.map((lead) => (
-              <button
-                className={lead.id === selectedLead.id ? 'lead-row active' : 'lead-row'}
-                key={lead.id}
-                onClick={() => setSelectedLeadId(lead.id)}
-                type="button"
-              >
-                <span>
-                  <strong>{lead.companyName}</strong>
-                  <small>
-                    {lead.industry} • {lead.employeeCount} employees
-                  </small>
-                </span>
-                <span className={scoreClass(lead.fitScore)}>{lead.fitScore}</span>
-              </button>
-            ))}
+        <section className="panel prospect-list-panel">
+          <PanelHeading eyebrow="Fictitious prospect list" title="Human review queue" />
+
+          <div className="filter-grid">
+            <label className="field-label" htmlFor="prospect-search">
+              Search prospects
+            </label>
+            <input
+              id="prospect-search"
+              placeholder="Search by company, industry, region, or summary"
+              type="search"
+              value={searchTerm}
+              onChange={(event: ChangeEvent<HTMLInputElement>) => setSearchTerm(event.target.value)}
+            />
+
+            <label className="field-label" htmlFor="fit-filter">
+              Fit filter
+            </label>
+            <select
+              id="fit-filter"
+              value={scoreBandFilter}
+              onChange={(event: ChangeEvent<HTMLSelectElement>) => setScoreBandFilter(event.target.value as 'All' | ScoreBand)}
+            >
+              {scoreBandOptions.map((option) => (
+                <option key={option}>{option}</option>
+              ))}
+            </select>
+
+            <label className="field-label" htmlFor="status-filter">
+              Status filter
+            </label>
+            <select
+              id="status-filter"
+              value={statusFilter}
+              onChange={(event: ChangeEvent<HTMLSelectElement>) => setStatusFilter(event.target.value as 'All' | ReviewStatus)}
+            >
+              {statusFilterOptions.map((option) => (
+                <option key={option}>{option}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="prospect-list">
+            {filteredProspects.length > 0 ? (
+              filteredProspects.map((prospect) => (
+                <button
+                  className={prospect.id === selectedProspect.id ? 'prospect-row active' : 'prospect-row'}
+                  key={prospect.id}
+                  onClick={() => setSelectedProspectId(prospect.id)}
+                  type="button"
+                >
+                  <span>
+                    <strong>{prospect.companyName}</strong>
+                    <small>
+                      {prospect.industry} • {prospect.employeeCount} employees • {statusByProspect[prospect.id]}
+                    </small>
+                  </span>
+                  <span className={scoreClass(prospect.fitScore)}>{prospect.fitScore}</span>
+                </button>
+              ))
+            ) : (
+              <p className="empty-state">No fictitious prospects match the current filters.</p>
+            )}
           </div>
         </section>
       </section>
 
       <section className="detail-grid">
         <section className="panel detail-panel">
-          <PanelHeading eyebrow="Lead detail" title={selectedLead.companyName} />
+          <PanelHeading eyebrow="Prospect detail" title={selectedProspect.companyName} />
           <p className="muted">Synthetic demo company. Not based on a real business.</p>
-          <p>{selectedLead.summary}</p>
+          <p>{selectedProspect.summary}</p>
 
           <div className="score-strip">
-            <ScoreCard label="Fit score" value={selectedLead.fitScore} band={selectedLead.scoreBand} />
-            <ScoreCard label="Confidence" value={selectedLead.confidenceScore} band="Human review required" />
-            <ScoreCard label="Risk level" value={getRiskLevel(selectedLead)} band="Flagged items below" />
+            <ScoreCard label="Fit score" value={selectedProspect.fitScore} band={selectedProspect.scoreBand} />
+            <ScoreCard label="Confidence" value={selectedProspect.confidenceScore} band="Human review required" />
+            <ScoreCard label="Risk level" value={getRiskLevel(selectedProspect)} band="Flagged items below" />
+          </div>
+
+          <div className="research-action-card">
+            <div>
+              <h3>Simulated research action</h3>
+              <p>
+                Generate a research brief for this fictitious prospect. This does not call a live
+                AI service or scrape the web.
+              </p>
+            </div>
+            <button
+              className="action-button"
+              onClick={() =>
+                setGeneratedBriefsByProspect((current) => ({
+                  ...current,
+                  [selectedProspect.id]: true,
+                }))
+              }
+              type="button"
+            >
+              {selectedBriefGenerated ? 'Regenerate Brief' : 'Generate Research Brief'}
+            </button>
           </div>
 
           <h3>Simulated AI research summary</h3>
-          <p className="ai-summary">{selectedLead.aiResearchSummary}</p>
+          <p className="ai-summary">{selectedProspect.aiResearchSummary}</p>
 
           <div className="three-column">
-            <ListBlock title="Pain signals" items={selectedLead.painSignals} />
-            <ListBlock title="Buying signals" items={selectedLead.buyingSignals} />
-            <ListBlock title="Possible use cases" items={selectedLead.possibleUseCases} />
+            <ListBlock title="Pain signals" items={selectedProspect.painSignals} />
+            <ListBlock title="Buying signals" items={selectedProspect.buyingSignals} />
+            <ListBlock title="Possible use cases" items={selectedProspect.possibleUseCases} />
           </div>
         </section>
 
@@ -140,10 +282,10 @@ export default function App() {
           <select
             id="review-status"
             value={selectedStatus}
-            onChange={(event) =>
-              setStatusByLead((current) => ({
+            onChange={(event: ChangeEvent<HTMLSelectElement>) =>
+              setStatusByProspect((current) => ({
                 ...current,
-                [selectedLead.id]: event.target.value as ReviewStatus,
+                [selectedProspect.id]: event.target.value as ReviewStatus,
               }))
             }
           >
@@ -157,19 +299,20 @@ export default function App() {
           </label>
           <textarea
             id="review-notes"
+            placeholder="Add human review notes for this fictitious prospect."
             value={selectedNotes}
-            onChange={(event) =>
-              setNotesByLead((current) => ({
+            onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
+              setNotesByProspect((current) => ({
                 ...current,
-                [selectedLead.id]: event.target.value,
+                [selectedProspect.id]: event.target.value,
               }))
             }
           />
 
           <div className="risk-list">
             <h3>Confidence / risk flags</h3>
-            {selectedLead.riskFlags.map((flag) => (
-              <div className="risk-card" key={`${selectedLead.id}-${flag.text}`}>
+            {selectedProspect.riskFlags.map((flag) => (
+              <div className="risk-card" key={`${selectedProspect.id}-${flag.text}`}>
                 <span className={`risk-pill risk-${flag.severity.toLowerCase()}`}>{flag.severity}</span>
                 <strong>{flag.category}</strong>
                 <p>{flag.text}</p>
@@ -180,27 +323,41 @@ export default function App() {
       </section>
 
       <section className="detail-grid">
-        <section className="panel crm-panel">
-          <PanelHeading eyebrow="CRM export preview" title="Preview only — no CRM is connected" />
-          <div className="crm-preview">
-            <InfoRow label="Lead status" value={selectedStatus === 'Qualified' ? 'Research Qualified' : selectedLead.crmPreview.leadStatus} />
-            <InfoRow label="Suggested segment" value={selectedLead.crmPreview.suggestedSegment} />
-            <InfoRow label="Suggested next step" value={selectedLead.crmPreview.suggestedNextStep} />
-            <InfoRow label="Human review required" value={selectedLead.crmPreview.humanReviewRequired ? 'Yes' : 'No'} />
-          </div>
-          <article className="crm-summary-card">
-            <h3>CRM-ready summary</h3>
-            <p>{selectedLead.crmPreview.summaryForCrm}</p>
-            <p>
-              <strong>Reviewer note:</strong> {selectedNotes || 'No reviewer note added yet.'}
-            </p>
-          </article>
+        <section className="panel brief-panel">
+          <PanelHeading eyebrow="Research brief" title="Generated packet for human review" />
+
+          {selectedBriefGenerated ? (
+            <>
+              <div className="brief-preview">
+                <InfoRow label="Company snapshot" value={selectedProspect.researchBrief.companySnapshot} />
+                <InfoRow label="Business model" value={selectedProspect.researchBrief.businessModel} />
+                <InfoRow label="Recommended next step" value={selectedProspect.researchBrief.recommendedNextStep} />
+              </div>
+
+              <div className="brief-grid">
+                <ListBlock title="Likely operational pain" items={selectedProspect.researchBrief.likelyOperationalPain} />
+                <ListBlock title="AI opportunity" items={selectedProspect.researchBrief.aiOpportunity} />
+                <ListBlock title="Discovery questions" items={selectedProspect.researchBrief.suggestedDiscoveryQuestions} />
+                <ListBlock title="Human validation needed" items={selectedProspect.researchBrief.humanValidationNeeded} />
+              </div>
+
+              <article className="brief-summary-card">
+                <h3>Reviewer note</h3>
+                <p>{selectedNotes || 'No reviewer note added yet.'}</p>
+              </article>
+            </>
+          ) : (
+            <div className="empty-state brief-empty-state">
+              <h3>No research brief generated yet</h3>
+              <p>Select “Generate Research Brief” above to reveal the simulated research packet.</p>
+            </div>
+          )}
         </section>
 
         <section className="panel audit-panel">
           <PanelHeading eyebrow="Traceability" title="Used, inferred, requires review" />
-          {selectedLead.auditTrail.map((entry) => (
-            <article className="audit-card" key={`${selectedLead.id}-${entry.step}`}>
+          {selectedProspect.auditTrail.map((entry) => (
+            <article className="audit-card" key={`${selectedProspect.id}-${entry.step}`}>
               <h3>{entry.step}</h3>
               <InfoRow label="Used" value={entry.used.join('; ')} />
               <InfoRow label="Inferred" value={entry.inferred.join('; ')} />
