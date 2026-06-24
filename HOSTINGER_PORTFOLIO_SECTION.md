@@ -37,13 +37,13 @@ Hermes was used during the design and build process to help structure the workfl
 
 This demo does not scrape real prospects, contact real people, update a CRM, run scheduled jobs, or perform automated outreach.
 
-## Hostinger iframe embed placeholder
+## Hostinger iframe embed code
 
-Replace `APP_PUBLIC_URL_HERE` after the app is deployed.
+Use this in a Hostinger Website Builder custom code/embed section.
 
 ```html
 <iframe
-  src="APP_PUBLIC_URL_HERE"
+  src="https://jtinnerello1.github.io/aieg-lead-research-workbench/"
   title="AIEG Lead Research Workbench Demo"
   style="width:100%; height:900px; border:0; border-radius:16px; overflow:hidden;"
   loading="lazy"
@@ -60,7 +60,7 @@ Use this below the iframe if Hostinger mobile sizing is poor:
 
 ```html
 <p>
-  <a href="APP_PUBLIC_URL_HERE" target="_blank" rel="noopener noreferrer">
+  <a href="https://jtinnerello1.github.io/aieg-lead-research-workbench/" target="_blank" rel="noopener noreferrer">
     Open the AIEG Lead Research Workbench demo in a new tab
   </a>
 </p>
