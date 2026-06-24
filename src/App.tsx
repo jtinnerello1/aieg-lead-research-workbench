@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { demoNotice, icpProfile, syntheticLeads } from './data';
 import type { ReviewStatus, SyntheticLead } from './types';
 
@@ -16,6 +16,23 @@ function scoreClass(score: number) {
   return 'score score-low';
 }
 
+function sendFrameHeight() {
+  const height = Math.max(
+    document.body.scrollHeight,
+    document.documentElement.scrollHeight,
+    document.body.offsetHeight,
+    document.documentElement.offsetHeight,
+  );
+
+  window.parent.postMessage(
+    {
+      type: 'aieg-workbench-height',
+      height,
+    },
+    '*',
+  );
+}
+
 export default function App() {
   const [selectedLeadId, setSelectedLeadId] = useState(syntheticLeads[0].id);
   const [statusByLead, setStatusByLead] = useState<Record<string, ReviewStatus>>(
@@ -29,6 +46,26 @@ export default function App() {
     () => syntheticLeads.find((lead) => lead.id === selectedLeadId) ?? syntheticLeads[0],
     [selectedLeadId],
   );
+
+  useEffect(() => {
+    sendFrameHeight();
+
+    const resizeObserver = new ResizeObserver(() => sendFrameHeight());
+    resizeObserver.observe(document.body);
+
+    window.addEventListener('load', sendFrameHeight);
+    window.addEventListener('resize', sendFrameHeight);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('load', sendFrameHeight);
+      window.removeEventListener('resize', sendFrameHeight);
+    };
+  }, []);
+
+  useEffect(() => {
+    sendFrameHeight();
+  }, [selectedLeadId, statusByLead, notesByLead]);
 
   const summary = useMemo(() => {
     const highFit = syntheticLeads.filter((lead) => lead.scoreBand === 'High Fit').length;
