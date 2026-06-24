@@ -188,20 +188,13 @@ export default function App() {
             <InfoRow label="Suggested next step" value={selectedLead.crmPreview.suggestedNextStep} />
             <InfoRow label="Human review required" value={selectedLead.crmPreview.humanReviewRequired ? 'Yes' : 'No'} />
           </div>
-          <pre className="json-preview">
-            {JSON.stringify(
-              {
-                companyName: selectedLead.companyName,
-                fitScore: selectedLead.fitScore,
-                confidenceScore: selectedLead.confidenceScore,
-                reviewStatus: selectedStatus,
-                reviewerNotes: selectedNotes,
-                crmSummary: selectedLead.crmPreview.summaryForCrm,
-              },
-              null,
-              2,
-            )}
-          </pre>
+          <article className="crm-summary-card">
+            <h3>CRM-ready summary</h3>
+            <p>{selectedLead.crmPreview.summaryForCrm}</p>
+            <p>
+              <strong>Reviewer note:</strong> {selectedNotes || 'No reviewer note added yet.'}
+            </p>
+          </article>
         </section>
 
         <section className="panel audit-panel">
