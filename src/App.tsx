@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { demoNotice, icpProfile, syntheticProspects } from './data';
 import type { ReviewStatus, ScoreBand, SyntheticProspect } from './types';
 
@@ -52,6 +52,7 @@ function loadStoredReviewState(): StoredReviewState {
 
 export default function App() {
   const storedReviewState = useMemo(loadStoredReviewState, []);
+  const briefPanelRef = useRef<HTMLElement | null>(null);
   const [selectedProspectId, setSelectedProspectId] = useState(syntheticProspects[0].id);
   const [searchTerm, setSearchTerm] = useState('');
   const [scoreBandFilter, setScoreBandFilter] = useState<'All' | ScoreBand>('All');
@@ -121,6 +122,17 @@ export default function App() {
   const selectedStatus = statusByProspect[selectedProspect.id] ?? selectedProspect.reviewStatus;
   const selectedNotes = notesByProspect[selectedProspect.id] ?? '';
   const selectedBriefGenerated = generatedBriefsByProspect[selectedProspect.id] ?? false;
+
+  function handleGenerateBrief() {
+    setGeneratedBriefsByProspect((current) => ({
+      ...current,
+      [selectedProspect.id]: true,
+    }));
+
+    window.setTimeout(() => {
+      briefPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 0);
+  }
 
   return (
     <main className="app-shell">
@@ -246,23 +258,51 @@ export default function App() {
             <div>
               <h3>Simulated research action</h3>
               <p>
-                Generate a research brief for this fictitious prospect. This does not call a live
-                AI service or scrape the web.
+                Generate a research brief for this fictitious prospect. The brief will open directly
+                below this button and does not call a live AI service or scrape the web.
               </p>
             </div>
-            <button
-              className="action-button"
-              onClick={() =>
-                setGeneratedBriefsByProspect((current) => ({
-                  ...current,
-                  [selectedProspect.id]: true,
-                }))
-              }
-              type="button"
-            >
-              {selectedBriefGenerated ? 'Regenerate Brief' : 'Generate Research Brief'}
+            <button className="action-button" onClick={handleGenerateBrief} type="button">
+              {selectedBriefGenerated ? 'Show Research Brief' : 'Generate Research Brief'}
             </button>
           </div>
+
+          {selectedBriefGenerated && (
+            <div className="brief-ready-banner">
+              Research brief generated. Review the packet below before changing the reviewer decision.
+            </div>
+          )}
+
+          <section className="inline-brief-panel" ref={briefPanelRef}>
+            <PanelHeading eyebrow="Research brief" title="Generated packet for human review" />
+
+            {selectedBriefGenerated ? (
+              <>
+                <div className="brief-preview">
+                  <InfoRow label="Company snapshot" value={selectedProspect.researchBrief.companySnapshot} />
+                  <InfoRow label="Business model" value={selectedProspect.researchBrief.businessModel} />
+                  <InfoRow label="Recommended next step" value={selectedProspect.researchBrief.recommendedNextStep} />
+                </div>
+
+                <div className="brief-grid">
+                  <ListBlock title="Likely operational pain" items={selectedProspect.researchBrief.likelyOperationalPain} />
+                  <ListBlock title="AI opportunity" items={selectedProspect.researchBrief.aiOpportunity} />
+                  <ListBlock title="Discovery questions" items={selectedProspect.researchBrief.suggestedDiscoveryQuestions} />
+                  <ListBlock title="Human validation needed" items={selectedProspect.researchBrief.humanValidationNeeded} />
+                </div>
+
+                <article className="brief-summary-card">
+                  <h3>Reviewer note</h3>
+                  <p>{selectedNotes || 'No reviewer note added yet.'}</p>
+                </article>
+              </>
+            ) : (
+              <div className="empty-state brief-empty-state">
+                <h3>No research brief generated yet</h3>
+                <p>Click “Generate Research Brief” above. The packet will appear here immediately.</p>
+              </div>
+            )}
+          </section>
 
           <h3>Simulated AI research summary</h3>
           <p className="ai-summary">{selectedProspect.aiResearchSummary}</p>
@@ -322,38 +362,7 @@ export default function App() {
         </section>
       </section>
 
-      <section className="detail-grid">
-        <section className="panel brief-panel">
-          <PanelHeading eyebrow="Research brief" title="Generated packet for human review" />
-
-          {selectedBriefGenerated ? (
-            <>
-              <div className="brief-preview">
-                <InfoRow label="Company snapshot" value={selectedProspect.researchBrief.companySnapshot} />
-                <InfoRow label="Business model" value={selectedProspect.researchBrief.businessModel} />
-                <InfoRow label="Recommended next step" value={selectedProspect.researchBrief.recommendedNextStep} />
-              </div>
-
-              <div className="brief-grid">
-                <ListBlock title="Likely operational pain" items={selectedProspect.researchBrief.likelyOperationalPain} />
-                <ListBlock title="AI opportunity" items={selectedProspect.researchBrief.aiOpportunity} />
-                <ListBlock title="Discovery questions" items={selectedProspect.researchBrief.suggestedDiscoveryQuestions} />
-                <ListBlock title="Human validation needed" items={selectedProspect.researchBrief.humanValidationNeeded} />
-              </div>
-
-              <article className="brief-summary-card">
-                <h3>Reviewer note</h3>
-                <p>{selectedNotes || 'No reviewer note added yet.'}</p>
-              </article>
-            </>
-          ) : (
-            <div className="empty-state brief-empty-state">
-              <h3>No research brief generated yet</h3>
-              <p>Select “Generate Research Brief” above to reveal the simulated research packet.</p>
-            </div>
-          )}
-        </section>
-
+      <section className="audit-grid">
         <section className="panel audit-panel">
           <PanelHeading eyebrow="Traceability" title="Used, inferred, requires review" />
           {selectedProspect.auditTrail.map((entry) => (
