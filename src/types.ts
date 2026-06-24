@@ -54,12 +54,14 @@ export type SyntheticLead = {
   reviewStatus: ReviewStatus;
   reviewerNotes: string;
   scoringBreakdown: ScoringBreakdown;
-  crmPreview: {
-    leadStatus: string;
-    suggestedSegment: string;
-    suggestedNextStep: string;
-    summaryForCrm: string;
-    humanReviewRequired: boolean;
-  };
+researchBrief: {
+  companySnapshot: string;
+  businessModel: string;
+  likelyOperationalPain: string[];
+  aiOpportunity: string[];
+  suggestedDiscoveryQuestions: string[];
+  recommendedNextStep: string;
+  humanValidationNeeded: string[];
+};
   auditTrail: AuditTrailEntry[];
 };
