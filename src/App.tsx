@@ -25,16 +25,20 @@ function scoreClass(score: number) {
   return 'score score-low';
 }
 
-function getDefaultStatuses() {
-  return Object.fromEntries(syntheticProspects.map((prospect) => [prospect.id, prospect.reviewStatus]));
+function getDefaultStatuses(): Record<string, ReviewStatus> {
+  return Object.fromEntries(
+    syntheticProspects.map((prospect): [string, ReviewStatus] => [prospect.id, prospect.reviewStatus]),
+  );
 }
 
-function getDefaultNotes() {
-  return Object.fromEntries(syntheticProspects.map((prospect) => [prospect.id, prospect.reviewerNotes]));
+function getDefaultNotes(): Record<string, string> {
+  return Object.fromEntries(
+    syntheticProspects.map((prospect): [string, string] => [prospect.id, prospect.reviewerNotes]),
+  );
 }
 
-function getDefaultGeneratedBriefs() {
-  return Object.fromEntries(syntheticProspects.map((prospect) => [prospect.id, false]));
+function getDefaultGeneratedBriefs(): Record<string, boolean> {
+  return Object.fromEntries(syntheticProspects.map((prospect): [string, boolean] => [prospect.id, false]));
 }
 
 function loadStoredReviewState(): StoredReviewState {
